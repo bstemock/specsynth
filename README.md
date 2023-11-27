@@ -266,8 +266,11 @@ Sets all pixel flux values to unity outside of absorbing regions.
 ## Authors
 
 Bryson Stemock
-Christopher W. Churchill
 
 ## License
 
 This project is licensed under the GNU General Public License v3.0 - see the [LICENSE.txt](LICENSE.txt) file for details.
+
+## Acknowledgements
+
+This project is adapted from code written by Christopher W. Churchill (1997).
