@@ -12,7 +12,7 @@ Specsynth is written in Python 3 and uses the common libraries numpy and pandas 
 
 ## Classes
 
-### Absorber(CON, ATOM, trans, vel\_range, Inst, seed, snr, zabs, v, logN, b)
+### Absorber(CON, ATOM, trans, vels, Inst, seed, snr, zabs, v, logN, b)
 
 Contains atomic data for the absorber as well as rest-frame velocity and wavelength grids and the normalized flux of the spectrum before convolution with the instrument ISF, after convolution with the instrument ISF, and after the addition of random noise.
 
@@ -24,8 +24,8 @@ Contains atomic data for the absorber as well as rest-frame velocity and wavelen
         The dictionary produced using data/atoms.dat.
 * **trans : *str***  
         Transition name. Must match a transition listed in the first column of atoms.dat.
-* **vel\_range : *list***  
-        The beginning and end values for the desired rest-frame velocity window.
+* **vels : *array\_like***  
+        Either the beginning and end values for the desired rest-frame velocity window or the desired velocity grid.
 * **Inst : *instrument class***  
 	The instrument class, initialized separately.
 * **seed : *int***  
