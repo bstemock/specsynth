@@ -53,8 +53,8 @@ def vel_to_wave(CON, vels, wave_cen, zabs):
 
 
 # compute pixel velocities oversampled by a factor of Inst.resfac to be used for convolution
-def get_vels_os(vel_range, Inst):
-    p_, p = np.floor(vel_range[0] / Inst.dv), np.ceil(vel_range[1] / Inst.dv)
+def get_vels_os(vels, Inst):
+    p_, p = np.floor(vels[0] / Inst.dv), np.ceil(vels[-1] / Inst.dv)
     return np.arange(Inst.resfac * p_, Inst.resfac * p, 1.0) * Inst.dv / Inst.resfac
 
 
@@ -190,15 +190,15 @@ def cleanspec(Abs, region_vels):
 
 # absorber class
 class Absorber:
-    def __init__(self, CON, ATOM, trans, vel_range, Inst, seed, snr, zabs, v, logN, b):
+    def __init__(self, CON, ATOM, trans, vels, Inst, seed, snr, zabs, v, logN, b):
         self.trans = trans                                                                  # transition name (string)
         self.atom = ATOM.loc[trans]                                                         # atomic data
         self.zabs = zabs                                                                    # absorber redshift
-        self.vels_os = get_vels_os(vel_range, Inst)                                         # oversampled velocity grid
+        self.vels_os = get_vels_os(vels, Inst)                                              # oversampled velocity grid
         self.waves_os = vel_to_wave(CON, self.vels_os, self.atom["wave_cen"], self.zabs)    # oversampled wavelengths
         self.tau = self.get_tau(CON, self.zabs, v, logN, b)                                 # optical depth
         self.f_norm_preconv = np.exp(-self.tau)                                     # normalized flux before convolution
-        self.vels, self.f_norm_noiseless = self.convolve_with_isf(Inst)             # properly-pixelized velocity, flux
+        self.vels, self.f_norm_noiseless = self.convolve_with_isf(Inst, vels)       # properly-pixelized velocity, flux
         self.waves = vel_to_wave(CON, self.vels, self.atom["wave_cen"], self.zabs)  # redshifted wavelengths
         self.f_norm, self.I_sig = self.add_noise(Inst, snr, seed)                   # finalized flux and sigma spectrum
 
@@ -234,12 +234,23 @@ class Absorber:
         return tau
 
     # convolve f_norm with instrument kernel and then average over every "resfac" number of pixels
-    def convolve_with_isf(self, Inst):
+    def convolve_with_isf(self, Inst, vels):
         pad = np.ones(int(Inst.num_pix))
         conv = np.concatenate((pad, np.convolve(self.f_norm_preconv, Inst.gauss_kernel, mode="valid"), pad))
-        vels = np.mean(self.vels_os.reshape(-1, int(Inst.resfac)), axis=1)
-        f_norm = np.mean(conv.reshape(-1, int(Inst.resfac)), axis=1)
-        return vels, f_norm
+        if np.array(vels).shape[0] == 2:
+            vels_ = np.mean(self.vels_os.reshape(-1, int(Inst.resfac)), axis=1)
+            f_norm = np.mean(conv.reshape(-1, int(Inst.resfac)), axis=1)
+            return vels_, f_norm
+        else:
+            v_edges = (vels[1:] + vels[:-1]) / 2
+            f_norm = []
+            lastj = 0
+            for edge in v_edges:
+                j = np.searchsorted(self.vels_os, edge, side='right')
+                f_norm.append(np.mean(self.f_norm_preconv[lastj:j]))
+                lastj = j
+            f_norm.append(np.mean(self.f_norm_preconv[lastj:]))
+            return vels, np.array(f_norm)
 
     # add noise to spectrum
     def add_noise(self, Inst, snr, seed):

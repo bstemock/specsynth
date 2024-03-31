@@ -1,1 +1,6 @@
-__pycache__/
+code/__pycache__/
+code/__pycache__/*
+example2.py
+test_grid.ipynb
+.ipynb_checkpoints/
+flux_files/

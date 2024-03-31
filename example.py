@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 ATOM = ss.get_atomic("data/atoms.dat")      # atomic data used by the Absorber class
 CON = ss.get_constants("data/const.dek")    # constants used by the Absorber class
 HIRES = ss.Instrument(CON, R=45000, presel=3.0, rdnoise=3.0, slit=1.0, n=3.0, resfac=3.0)   # Instrument
-MgII = ss.Absorber(CON, ATOM, trans="MgII2796", vel_range=[-100.0, 100.0], Inst=HIRES, seed=42,
+MgII = ss.Absorber(CON, ATOM, trans="MgII2796", vels=[-100.0, 100.0], Inst=HIRES, seed=42,
                    snr=70, zabs=1.000000, v=[-22.2, 25.2, 52.0], logN=[12.1, 13.7, 11.7], b=[5.0, 7.2, 2.9])
 print(type(MgII.atom), MgII.atom)
 
@@ -33,7 +33,7 @@ plt.show()
 plt.close(fig)
 
 # Line detection functionality
-MgII_ = ss.Absorber(CON, ATOM, trans="MgII2803", vel_range=[-100.0, 100.0], Inst=HIRES, seed=42,
+MgII_ = ss.Absorber(CON, ATOM, trans="MgII2803", vels=[-100.0, 100.0], Inst=HIRES, seed=42,
                     snr=70, zabs=1.000000, v=[25.2, 52.0], logN=[13.7, 11.7], b=[7.2, 2.9])
 
 # Check for 5 sigma detections of dominant transition
