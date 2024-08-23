@@ -263,6 +263,26 @@ Sets all pixel flux values to unity outside of absorbing regions.
 * **Abs : *Absorber***  
 	The modified absorber class object. In **Abs.f\_norm**, all flux values outside of the provided detection regions have been set to unity.
 
+### get_Naod(ATOM, trans, flux, sigma)
+
+Returns the apparent optical depth (AOD) column density spectrum (cm<sup>-2</sup> pix<sup>-1</sup>) of a given flux spectrum.
+
+**Parameters:**
+
+* **ATOM : *dict***  
+        Dictionary containing atomic data for all transitions in atoms.dat.
+* **trans : *str***
+        Transition name. Must match a transition listed in the first column of atoms.dat.
+* **flux : *1darray***
+	Normalized flux.
+* **sigma : *1darray***
+	Uncertainty spectrum.
+
+**Returns:**
+
+* **Naod : *1darray***  
+        The AOD column density spectrum in units of cm<sup>-2</sup> pix<sup>-1</sup>.
+
 ## Authors
 
 Bryson Stemock
