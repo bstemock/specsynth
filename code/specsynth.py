@@ -148,7 +148,8 @@ def get_abs_regions(Abs, ew_spec, ew_sig, sigma_threshold=3.0, dominant=True, re
                     up_pix = i + np.where(detect1[i:] == 0)[0][0] - 1
                 except IndexError:                                          # if abs region doesn't recover to 1 sigma
                     up_pix = ew_spec.shape[0] - 1
-                detection_vels.append([Abs.vels[down_pix], Abs.vels[up_pix]])
+                if up_pix != down_pix:
+                    detection_vels.append([Abs.vels[down_pix], Abs.vels[up_pix]])
                 i = up_pix + 1
             else:
                 i += 1
@@ -161,6 +162,9 @@ def get_abs_regions(Abs, ew_spec, ew_sig, sigma_threshold=3.0, dominant=True, re
         # scan through each dominant transition abs regions to find abs regions
         for region in region_vels:
             ind = np.where((Abs.vels > region[0]) & (Abs.vels < region[1]))[0]
+            if ind.shape[0] == 0:
+                detection_flags.append(False)
+                continue
             if True in detectN[ind[0] - 1:ind[-1] + 2]:
                 detection_flags.append(True)
             else:
@@ -186,6 +190,13 @@ def cleanspec(Abs, region_vels):
         clean[i] = Abs.f_norm[i]
     Abs.f_norm = clean
     return Abs
+
+
+def get_Naod(ATOM, trans, flux, sigma):
+    atom = ATOM.loc[trans]
+    f = np.where(flux < sigma, sigma, flux)
+    f = np.where((np.abs(1.0 - f) < sigma) | (f > 1.0), 1.0 - sigma, f)
+    return -3.7679e14 * np.log(f) / (atom["osc_str"] * atom["wave_cen"])
 
 
 # absorber class
