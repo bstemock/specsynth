@@ -32,7 +32,7 @@ Contains atomic data for the absorber as well as rest-frame velocity and wavelen
 	Random seed.
 * **snr : *float***  
 	Signal-to-noise ratio.
-* **zabs : *int***  
+* **zabs : *float***  
 	Absorber redshift.
 * **v : *list***  
 	List of velocities in km s<sup>-1</sup> for each absortion line in the spectrum. Must have the same length as **logN** and **b**.
@@ -187,19 +187,31 @@ Converts rest-frame velocities in km s<sup>-1</sup> to wavelengths in angstroms.
 * **waves : *float* or *array-like***  
         Wavelength(s) in angstroms.
 
-### get\_ew\_spec(CON, Abs, Inst)
+### get\_ew\_spec(CON, ATOM, Inst, trans, zabs, vels, waves, f_norm, f_sig)
 
-Calculates the equivalent width spectrum of an absorber.
+Returns a spectrum's equivalent width and equivalent width uncertainty spectra for a given transition.
 
 **Parameters:**
 
 * **CON : *dict***  
-        The dictionary produced using data/const.dek.
-* **Abs : *Absorber***  
-	Absorber class object.
+    The dictionary produced using data/const.dek.
+* **ATOM : *dict***
+    Table of atomic data produced using data/atoms.dat.
 * **Inst : *Instrument***  
 	Instrument class object.
-
+* **trans : *str***
+    Transition name. Must match a transition listed in the first column of atoms.dat.
+* **zabs : *float***
+    Absorber redshift.
+* **vels : *array-like***  
+    Rest-frame pixel velocities in km s<sup>-1</sup>.
+* **waves : *array-like***  
+	Pixel wavelengths in angstroms.
+* **f\_norm : *1darray***  
+	Normalized flux.
+* **f\_sig : *1darray***  
+	Uncertainty spectrum.
+    
 **Returns**
 
 * **ew\_spec : *1darray***  
@@ -207,18 +219,18 @@ Calculates the equivalent width spectrum of an absorber.
 * **ew\_sig : *1darray***  
 	Equivalent width uncertainty spectrum.
 
-### get\_abs\_regions(Abs, ew\_spec, ew\_sig, sigma\_threshold=3.0, dominant=True, region\_vels=None)
+### get\_abs\_regions(vels, ew\_spec, ew\_sig, sigma\_threshold=3.0, dominant=True, region\_vels=None)
 
 Uses the equivalent width and equivalent width uncertainty spectra of an abosrber to detect absorption lines in the spectrum produced by an Absorber class object.
 
 **Parameters:**
 
-* **Abs : *Absorber***  
-        Absorber class object.
+* **vels : *array-like***  
+    Rest-frame pixel velocities in km s<sup>-1</sup>.
 * **ew\_spec : *1darray***  
-        Equivalent width spectrum.
+    Equivalent width spectrum.
 * **ew\_sig : *1darray***  
-        Equivalent width uncertainty spectrum.
+    Equivalent width uncertainty spectrum.
 * **sigma\_threshold : *1darray***  
 	Detection threshold. Pixels in the equivalent width spectrum that exceed this number times the corresponding equivalent width uncertainty spectrum value will be flagged as detections.
 * **dominant : *bool***  

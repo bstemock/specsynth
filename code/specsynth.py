@@ -82,43 +82,89 @@ def voigt_reg2(CON, x, dlamD, y, y1, y2):
     return u / (np.sqrt(CON["pi"]) * dlamD)
 
 
+# # detect absorption regions
+# def get_ew_spec(CON, Abs, Inst):
+#     J = int(2.0 * Inst.presel)
+#     N = int(2 * J + 1)
+#
+#     # pad J pixels onto either end of necessary arrays
+#     down_pad = np.arange(Abs.vels[0] - (J + 1) * Inst.dv, Abs.vels[0] - Inst.dv, Inst.dv)       # velocity down_pad
+#     up_pad = np.arange(Abs.vels[-1] + Inst.dv, Abs.vels[-1] + (J + 1) * Inst.dv, Inst.dv)       # velocity up_pad
+#     vels = np.concatenate((down_pad, Abs.vels, up_pad))
+#     pad_num = int((vels.shape[0] - Abs.vels.shape[0]) / 2)                      # number of pixels padded onto one end
+#     down_pad_ = np.mean(Abs.I_sig[:J]) * np.ones(pad_num)                       # sigma spec down_pad
+#     up_pad_ = np.mean(Abs.I_sig[-J:]) * np.ones(pad_num)                        # sigma spec up_pad
+#     Dsig = np.concatenate((down_pad_, Abs.I_sig, up_pad_))                      # sigma_D = sigma_{f_norm} = I_sig
+#     f_norm = np.concatenate((np.ones(pad_num), Abs.f_norm, np.ones(pad_num)))
+#
+#     # compute additional required arrays and construct empty arrays
+#     waves = (1.0 + Abs.zabs) * (vels * Abs.atom["wave_cen"] / CON["ckms"] + Abs.atom["wave_cen"])
+#     D = 1.0 - f_norm                                                                            # flux decrement
+#     sig_ISF = Abs.waves / (Inst.R * 2.35482)                                                    # sigma_{ISF}
+#     x_ki = np.empty((Abs.waves.shape[0], N))                                                    # x_ki
+#     P_ni = np.empty((Abs.waves.shape[0], N))                                                    # P_n
+#     dlambda = np.empty((Abs.waves.shape[0]))                                    # lambda_{i + 1} - lambda_i
+#     prod1 = np.empty((Abs.waves.shape[0], N))                                   # P_n * D_k, used in sum to compute w_i
+#     prod2 = np.empty((Abs.waves.shape[0], N))           # P_n**2 * sigma_{D_k}**2, used in sum to compute sigma_{w_i}
+#
+#     # populate empty arrays and compute P**2
+#     for i in range(Abs.waves.shape[0]):
+#         for n in range(1, N + 1):
+#             k = i + n - 1 - J
+#             x_ki[i, n - 1] = (waves[i + pad_num] - waves[k + pad_num]) / sig_ISF[i]
+#         for n in range(1, N + 1):
+#             k = i + n - 1 - J
+#             denom = np.exp(-x_ki[i] * x_ki[i])
+#             P_ni[i, n - 1] = np.exp(-x_ki[i, n - 1] * x_ki[i, n - 1]) / np.sum(denom)
+#             prod1[i, n - 1] = P_ni[i, n - 1] * D[k + pad_num]
+#             prod2[i, n - 1] = np.sqrt(P_ni[i, n - 1] * P_ni[i, n - 1] * Dsig[k + pad_num] * Dsig[k + pad_num])
+#         dlambda[i] = waves[i + pad_num + 1] - waves[i + pad_num]
+#     P2 = np.sum(P_ni * P_ni, axis=1)
+#
+#     # compute ew spectrum and ew uncertainty spectrum
+#     ew_spec = dlambda * np.sum(prod1, axis=1) / P2
+#     ew_sig = dlambda * np.sum(prod2, axis=1) / P2
+#     return ew_spec, ew_sig
+
+
 # detect absorption regions
-def get_ew_spec(CON, Abs, Inst):
+def get_ew_spec(CON, ATOM, Inst, trans, zabs, vels, waves, f_norm, f_sig):
+    atom = ATOM.loc[trans]
     J = int(2.0 * Inst.presel)
     N = int(2 * J + 1)
 
     # pad J pixels onto either end of necessary arrays
-    down_pad = np.arange(Abs.vels[0] - (J + 1) * Inst.dv, Abs.vels[0] - Inst.dv, Inst.dv)       # velocity down_pad
-    up_pad = np.arange(Abs.vels[-1] + Inst.dv, Abs.vels[-1] + (J + 1) * Inst.dv, Inst.dv)       # velocity up_pad
-    vels = np.concatenate((down_pad, Abs.vels, up_pad))
-    pad_num = int((vels.shape[0] - Abs.vels.shape[0]) / 2)                      # number of pixels padded onto one end
-    down_pad_ = np.mean(Abs.I_sig[:J]) * np.ones(pad_num)                       # sigma spec down_pad
-    up_pad_ = np.mean(Abs.I_sig[-J:]) * np.ones(pad_num)                        # sigma spec up_pad
-    Dsig = np.concatenate((down_pad_, Abs.I_sig, up_pad_))                      # sigma_D = sigma_{f_norm} = I_sig
-    f_norm = np.concatenate((np.ones(pad_num), Abs.f_norm, np.ones(pad_num)))
+    down_pad = np.arange(vels[0] - (J + 1) * Inst.dv, vels[0] - Inst.dv, Inst.dv)       # velocity down_pad
+    up_pad = np.arange(vels[-1] + Inst.dv, vels[-1] + (J + 1) * Inst.dv, Inst.dv)       # velocity up_pad
+    vels_ = np.concatenate((down_pad, vels, up_pad))
+    pad_num = int((vels_.shape[0] - vels.shape[0]) / 2)                          # number of pixels padded onto one end
+    down_pad_ = np.mean(f_sig[:J]) * np.ones(pad_num)                           # sigma spec down_pad
+    up_pad_ = np.mean(f_sig[-J:]) * np.ones(pad_num)                            # sigma spec up_pad
+    Dsig = np.concatenate((down_pad_, f_sig, up_pad_))                          # sigma_D = sigma_{f_norm} = I_sig
+    f_norm = np.concatenate((np.ones(pad_num), f_norm, np.ones(pad_num)))
 
     # compute additional required arrays and construct empty arrays
-    waves = (1.0 + Abs.zabs) * (vels * Abs.atom["wave_cen"] / CON["ckms"] + Abs.atom["wave_cen"])
+    waves_ = (1.0 + zabs) * (vels_ * atom["wave_cen"] / CON["ckms"] + atom["wave_cen"])
     D = 1.0 - f_norm                                                                            # flux decrement
-    sig_ISF = Abs.waves / (Inst.R * 2.35482)                                                    # sigma_{ISF}
-    x_ki = np.empty((Abs.waves.shape[0], N))                                                    # x_ki
-    P_ni = np.empty((Abs.waves.shape[0], N))                                                    # P_n
-    dlambda = np.empty((Abs.waves.shape[0]))                                    # lambda_{i + 1} - lambda_i
-    prod1 = np.empty((Abs.waves.shape[0], N))                                   # P_n * D_k, used in sum to compute w_i
-    prod2 = np.empty((Abs.waves.shape[0], N))           # P_n**2 * sigma_{D_k}**2, used in sum to compute sigma_{w_i}
+    sig_ISF = waves / (Inst.R * 2.35482)                                                        # sigma_{ISF}
+    x_ki = np.empty((waves.shape[0], N))                                                        # x_ki
+    P_ni = np.empty((waves.shape[0], N))                                                        # P_n
+    dlambda = np.empty((waves.shape[0]))                                        # lambda_{i + 1} - lambda_i
+    prod1 = np.empty((waves.shape[0], N))                                       # P_n * D_k, used in sum to compute w_i
+    prod2 = np.empty((waves.shape[0], N))               # P_n**2 * sigma_{D_k}**2, used in sum to compute sigma_{w_i}
 
     # populate empty arrays and compute P**2
-    for i in range(Abs.waves.shape[0]):
+    for i in range(waves.shape[0]):
         for n in range(1, N + 1):
             k = i + n - 1 - J
-            x_ki[i, n - 1] = (waves[i + pad_num] - waves[k + pad_num]) / sig_ISF[i]
+            x_ki[i, n - 1] = (waves_[i + pad_num] - waves_[k + pad_num]) / sig_ISF[i]
         for n in range(1, N + 1):
             k = i + n - 1 - J
             denom = np.exp(-x_ki[i] * x_ki[i])
             P_ni[i, n - 1] = np.exp(-x_ki[i, n - 1] * x_ki[i, n - 1]) / np.sum(denom)
             prod1[i, n - 1] = P_ni[i, n - 1] * D[k + pad_num]
             prod2[i, n - 1] = np.sqrt(P_ni[i, n - 1] * P_ni[i, n - 1] * Dsig[k + pad_num] * Dsig[k + pad_num])
-        dlambda[i] = waves[i + pad_num + 1] - waves[i + pad_num]
+        dlambda[i] = waves_[i + pad_num + 1] - waves_[i + pad_num]
     P2 = np.sum(P_ni * P_ni, axis=1)
 
     # compute ew spectrum and ew uncertainty spectrum
@@ -128,7 +174,7 @@ def get_ew_spec(CON, Abs, Inst):
 
 
 # detect absorption lines above the given sigma threshold and return absorption region limits
-def get_abs_regions(Abs, ew_spec, ew_sig, sigma_threshold=3.0, dominant=True, region_vels=None):
+def get_abs_regions(vels, ew_spec, ew_sig, sigma_threshold=3.0, dominant=True, region_vels=None):
     detect1 = np.where(ew_spec > ew_sig, 1, 0)                              # True where ew_spec above 1 sigma threshold
     detectN = np.where(ew_spec > sigma_threshold * ew_sig, True, False)     # True where ew_spec above sigma_threshold
 
@@ -149,7 +195,7 @@ def get_abs_regions(Abs, ew_spec, ew_sig, sigma_threshold=3.0, dominant=True, re
                 except IndexError:                                          # if abs region doesn't recover to 1 sigma
                     up_pix = ew_spec.shape[0] - 1
                 if up_pix != down_pix:
-                    detection_vels.append([Abs.vels[down_pix], Abs.vels[up_pix]])
+                    detection_vels.append([vels[down_pix], vels[up_pix]])
                 i = up_pix + 1
             else:
                 i += 1
@@ -161,7 +207,7 @@ def get_abs_regions(Abs, ew_spec, ew_sig, sigma_threshold=3.0, dominant=True, re
 
         # scan through each dominant transition abs regions to find abs regions
         for region in region_vels:
-            ind = np.where((Abs.vels > region[0]) & (Abs.vels < region[1]))[0]
+            ind = np.where((vels > region[0]) & (vels < region[1]))[0]
             if ind.shape[0] == 0:
                 detection_flags.append(False)
                 continue

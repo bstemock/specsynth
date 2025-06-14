@@ -37,13 +37,15 @@ MgII_ = ss.Absorber(CON, ATOM, trans="MgII2803", vels=[-100.0, 100.0], Inst=HIRE
                     snr=70, zabs=1.000000, v=[25.2, 52.0], logN=[13.7, 11.7], b=[7.2, 2.9])
 
 # Check for 5 sigma detections of dominant transition
-ew_spec2796, ew_sig2796 = ss.get_ew_spec(CON, MgII, HIRES)
-abs_vels2796 = ss.get_abs_regions(MgII, ew_spec2796, ew_sig2796, sigma_threshold=5.0)
+ew_spec2796, ew_sig2796 = ss.get_ew_spec(CON, ATOM, HIRES, "MgII2796", 1.000000,
+                                         MgII.vels, MgII.waves, MgII.f_norm, MgII.I_sig)
+abs_vels2796 = ss.get_abs_regions(MgII.vels, ew_spec2796, ew_sig2796, sigma_threshold=5.0)
 print("Absorbing regions before doublet check:", abs_vels2796)
 
 # Check for aligned 3 sigma detections in non-dominant transitions
-ew_spec2803, ew_sig2803 = ss.get_ew_spec(CON, MgII_, HIRES)
-abs_flags2803 = ss.get_abs_regions(MgII_, ew_spec2803, ew_sig2803, sigma_threshold=3.0,
+ew_spec2803, ew_sig2803 = ss.get_ew_spec(CON, ATOM, HIRES, "MgII2803", 1.000000,
+                                         MgII_.vels, MgII_.waves, MgII_.f_norm, MgII_.I_sig)
+abs_flags2803 = ss.get_abs_regions(MgII_.vels, ew_spec2803, ew_sig2803, sigma_threshold=3.0,
                                    dominant=False, region_vels=abs_vels2796)
 abs_vels2796 = ss.dblt_checker(abs_vels2796, abs_flags2803)
 print("Absorbing regions after doublet check:", abs_vels2796)
